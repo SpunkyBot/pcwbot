@@ -5,50 +5,24 @@ __pycache__/
 # C extensions
 *.so
 
-# Distribution / packaging
-.Python
-env/
-bin/
-build/
-develop-eggs/
-dist/
-eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+# SVN
+.svn/
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# PyCharm
+.idea
+.iml
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.cache
-nosetests.xml
-coverage.xml
+# OSX
+.DS_Store
 
-# Translations
-*.mo
+# Database
+*.sqlite
 
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
+# Backup files
+*.*~
 
-# Rope
-.ropeproject
+# Test files
+test*.*
 
-# Django stuff:
+# Log files
 *.log
-*.pot
-
-# Sphinx documentation
-docs/_build/
-
