@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+### BEGIN INIT INFO
+# Provides:          pcwbot
+# Required-Start:    $network $local_fs
+# Required-Stop:     $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Initscript for pcwbot
+# Description:       Start/Stop/Restart the pcwbot service daemon
+### END INIT INFO
+
+# Installation:
+# Move this file to /etc/init.d/pcwbot
+# Make it executable: sudo chmod +x /etc/init.d/pcwbot
+# Start at boot: sudo update-rc.d pcwbot defaults
+# Manual start: sudo /etc/init.d/pcwbot start
+
+# Change the next 3 lines to suit where you installed pcwbot, and which user is running the Urban Terror server
+DIR=/opt/pcwbot
+USER=q3ut4
+GROUP=q3ut4
+
+# Don't modify the code below
+DAEMON=$DIR/pcwbot.py
+NAME=pcwbot
+RUNDIR=/var/run/$NAME
+PIDFILE=$RUNDIR/$NAME.pid
+
+# Get LSB functions
+. /lib/lsb/init-functions
+
+# See if the daemon is present
+if [ -e "$DAEMON" ]
+    then
+        chmod +x "$DAEMON"
+        chown -R "$USER:$GROUP" "$DIR"
+    fi
+
+# Make sure /var/run/pcwbot exists
+test -d "$RUNDIR" || {
+    mkdir -p "$RUNDIR"
+    chown -R "$USER:$GROUP" "$RUNDIR"
+}
+
+case "$1" in
+    start)
+        if [ -e "$PIDFILE" ]
+        then
+            echo "$0:"
+            echo "  Another instance of \`${DAEMON##*/}' seems to be running."
+            echo "  If this is not the case, please remove \"$PIDFILE\"."
+            exit 1
+        fi
+
+        log_begin_msg "Starting service $NAME..."
+        umask 002
+        if start-stop-daemon --start --quiet --background --chdir $DIR --chuid $USER:$GROUP --pidfile "$PIDFILE" --make-pidfile --exec $DAEMON; then
+            log_end_msg 0
+        else
+            log_end_msg $?
+        fi
+        ;;
+
+    stop)
+        log_begin_msg "Stopping service $NAME..."
+        if start-stop-daemon --stop --quiet --pidfile "$PIDFILE" && rm -f "$PIDFILE"; then
+            log_end_msg 0
+        else
+            log_end_msg $?
+        fi
+        ;;
+
+    restart)
+        $0 stop
+        sleep 3
+        $0 start
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart}" >&2
+        exit 1
+        ;;
+esac
+exit 0
