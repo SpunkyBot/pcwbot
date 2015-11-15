@@ -19,7 +19,7 @@ Modify the configuration file 'settings.conf'
 Run the bot: python pcwbot.py
 """
 
-__version__ = '0.9.9'
+__version__ = '0.9.10'
 
 
 ### IMPORTS
@@ -113,7 +113,7 @@ class PyQuake3(object):
         except socket.error, err:
             raise Exception('Error receiving the packet: %s' % err[1])
 
-    def command(self, cmd, timeout=1, retries=3):
+    def command(self, cmd, timeout=1, retries=5):
         """
         send command and receive response
         """
@@ -296,7 +296,7 @@ class LogParser(object):
         @type  config_file: String
         """
         # RCON commands for the different admin roles
-        self.admin_cmds = ['cyclemap', 'force', 'kick', 'list', 'map', 'password', 'reload', 'setnextmap', 'veto']
+        self.admin_cmds = ['cyclemap', 'exec', 'force', 'kick', 'list', 'map', 'password', 'reload', 'setnextmap', 'swapteams', 'veto']
         self.headadmin_cmds = self.admin_cmds + ['leveltest', 'putgroup', 'ungroup']
         # alphabetic sort of the commands
         self.admin_cmds.sort()
@@ -333,7 +333,7 @@ class LogParser(object):
 
         while self.log_file:
             line = self.log_file.readline()
-            if len(line) != 0:
+            if line:
                 self.parse_line(line)
             else:
                 if not self.game.live:
@@ -348,14 +348,13 @@ class LogParser(object):
         tmp = line.split(":", 1)
         line = tmp[1].strip() if len(tmp) > 1 else tmp[0].strip()
         try:
-            if tmp:
-                action = tmp[0].strip()
-                if action == 'ClientUserinfo':
-                    self.handle_userinfo(line)
-                elif action == 'ClientDisconnect':
-                    self.handle_disconnect(line)
-                elif action == 'say':
-                    self.handle_say(line)
+            action = tmp[0].strip()
+            if action == 'ClientUserinfo':
+                self.handle_userinfo(line)
+            elif action == 'ClientDisconnect':
+                self.handle_disconnect(line)
+            elif action == 'say':
+                self.handle_say(line)
         except (IndexError, KeyError):
             pass
         except Exception, err:
@@ -387,25 +386,9 @@ class LogParser(object):
             player_num = int(line[:2].strip())
             line = line[2:].lstrip("\\").lstrip()
             values = self.explode_line(line)
-            challenge = True if 'challenge' in values else False
-            try:
-                guid = values['cl_guid'].rstrip('\n')
-                name = re.sub(r"\s+", "", values['name'])
-                ip_port = values['ip']
-            except KeyError:
-                if 'cl_guid' in values:
-                    guid = values['cl_guid']
-                else:
-                    guid = "None"
-                if 'name' in values:
-                    name = re.sub(r"\s+", "", values['name'])
-                else:
-                    name = "UnnamedPlayer"
-                if 'ip' in values:
-                    ip_port = values['ip']
-                else:
-                    ip_port = "0.0.0.0:0"
-
+            name = re.sub(r"\s+", "", values['name']) if 'name' in values else "UnnamedPlayer"
+            ip_port = values['ip'] if 'ip' in values else "0.0.0.0:0"
+            guid = values['cl_guid'] if 'cl_guid' in values else "None"
             ip_address = ip_port.split(":")[0].strip()
 
             if player_num not in self.game.players:
@@ -416,10 +399,6 @@ class LogParser(object):
                 self.game.players[player_num].set_guid(guid)
             if self.game.players[player_num].get_name() != name:
                 self.game.players[player_num].set_name(name)
-
-            if not challenge:
-                if 'name' in values and values['name'] != self.game.players[player_num].get_name():
-                    self.game.players[player_num].set_name(values['name'])
 
     def handle_disconnect(self, line):
         """
@@ -465,7 +444,7 @@ class LogParser(object):
                 break
             elif map_name.lower() in maps:
                 append(maps)
-        if len(map_list) == 0:
+        if not map_list:
             return False, None, "^3Map not found"
         elif len(map_list) > 1:
             return False, None, "^7Maps matching %s: ^3%s" % (map_name, ', '.join(map_list))
@@ -593,6 +572,10 @@ class LogParser(object):
             elif sar['command'] == '!cyclemap' and self.game.players[sar['player_num']].get_admin_role() >= 40:
                 self.game.send_rcon('cyclemap')
 
+            # swapteams - swap current teams
+            elif sar['command'] == '!swapteams' and self.game.players[sar['player_num']].get_admin_role() >= 80:
+                self.game.send_rcon('swapteams')
+
 ## head admin level 100
             # leveltest
             elif (sar['command'] == '!leveltest' or sar['command'] == '!lt') and self.game.players[sar['player_num']].get_admin_role() == 100:
@@ -667,7 +650,7 @@ class LogParser(object):
                     self.game.rcon_tell(sar['player_num'], "^7You are registered as ^6Head Admin")
 
 ## unknown command
-            elif sar['command'].startswith('!') and self.game.players[sar['player_num']].get_admin_role() >= 40:
+            elif sar['command'].startswith('!') and len(sar['command']) > 1 and self.game.players[sar['player_num']].get_admin_role() >= 40:
                 if sar['command'].lstrip('!') in self.headadmin_cmds:
                     self.game.rcon_tell(sar['player_num'], "^7Insufficient privileges to use command ^3%s" % sar['command'])
 
@@ -686,7 +669,7 @@ class Player(object):
         """
         self.player_num = player_num
         self.guid = guid
-        self.name = "".join(name.split())
+        self.name = name.replace(' ', '')
         self.registered_user = False
         self.admin_role = 0
         self.address = ip_address
@@ -723,7 +706,7 @@ class Player(object):
         self.set_admin_role(role)
 
     def set_name(self, name):
-        self.name = "".join(name.split())
+        self.name = name.replace(' ', '')
 
     def get_name(self):
         return self.name
@@ -771,7 +754,7 @@ class Game(object):
         self.add_player(world)
         print "- Added pcwbot successful to the game.\n"
         print "pcwbot is running until you are closing this session or pressing CTRL + C to abort this process."
-        print "Note: Use the provided initscript to run pcwbot as daemon.\n"
+        print "*** Note: Use the provided initscript to run pcwbot as daemon ***\n"
 
     def send_rcon(self, command):
         """
@@ -792,7 +775,7 @@ class Game(object):
         @param msg: The message to display in private chat
         @type  msg: String
         """
-        lines = textwrap.wrap(msg, 135)
+        lines = textwrap.wrap(msg, 128)
         for line in lines:
             self.send_rcon('tell %d %s' % (player_num, line))
 
@@ -829,10 +812,14 @@ class Game(object):
         set a list of all available maps
         """
         all_maps = self.rcon_handle.get_rcon_output("dir map bsp")[1].split()
-        all_maps.sort()
         all_maps_list = [maps.replace("/", "").replace(".bsp", "") for maps in all_maps if maps.startswith("/")]
-        if all_maps_list:
-            self.all_maps_list = all_maps_list
+        pk3_list = self.rcon_handle.get_rcon_output("fdir *.pk3")[1].split()
+        all_pk3_list = [maps.replace("/", "").replace(".pk3", "").replace(".bsp", "") for maps in pk3_list if maps.startswith("/ut4_")]
+
+        all_together = list(set(all_maps_list + all_pk3_list))
+        all_together.sort()
+        if all_together:
+            self.all_maps_list = all_together
 
     def get_all_maps(self):
         """
