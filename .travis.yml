@@ -6,6 +6,6 @@ branches:
   only:
     - master
 install:
-  - pip install flake8 --use-mirrors
+  - pip install flake8
 script:
-  - flake8 --ignore=E501,E265 .
+  - flake8 --ignore=E501,E265,E266,E402 .
