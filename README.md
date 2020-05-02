@@ -1,6 +1,10 @@
 pcwbot
 ======
 
+[![Build Status](https://travis-ci.org/SpunkyBot/pcwbot.svg?branch=master)](https://travis-ci.org/SpunkyBot/pcwbot)
+[![Release](https://img.shields.io/github/v/release/SpunkyBot/pcwbot.svg)](https://github.com/SpunkyBot/pcwbot/releases)
+[![License](https://img.shields.io/github/license/SpunkyBot/pcwbot)](https://github.com/SpunkyBot/pcwbot/blob/master/LICENSE)
+
 Scaled down version of Spunky Bot, optimized for PCW server and private Clan server
 
 Following Admin commands are supported:
