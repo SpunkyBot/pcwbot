@@ -1,6 +1,5 @@
 language: python
 python:
-  - "2.6"
   - "2.7"
 branches:
   only:
@@ -8,4 +7,4 @@ branches:
 install:
   - pip install flake8
 script:
-  - flake8 --ignore=E501,E265,E266,E402 .
+  - flake8 --ignore=E501,E265,E266,E402,E722 .
