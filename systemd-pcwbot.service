@@ -1,0 +1,21 @@
+# Installation:
+# Move this file to /lib/systemd/system/pcwbot.service
+# Modify 'User' and 'WorkingDirectory' to suit where you installed pcwbot
+# Afterwards: sudo systemctl daemon-reload
+#             sudo systemctl enable pcwbot.service
+#             sudo systemctl start pcwbot.service
+
+[Unit]
+Description=pcwbot
+After=network.target
+
+[Service]
+User=q3ut4
+WorkingDirectory=/opt/pcwbot
+ExecStart=/usr/bin/python pcwbot.py
+StandardOutput=null
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

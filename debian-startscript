@@ -10,10 +10,12 @@
 # Description:       Start/Stop/Restart the pcwbot service daemon
 ### END INIT INFO
 
+set -e
+
 # Installation:
 # Move this file to /etc/init.d/pcwbot
 # Make it executable: sudo chmod +x /etc/init.d/pcwbot
-# Start at boot: sudo update-rc.d pcwbot defaults
+# Start at boot: sudo update-rc.d pcwbot defaults 80 10
 # Manual start: sudo /etc/init.d/pcwbot start
 
 # Change the next 3 lines to suit where you installed pcwbot, and which user is running the Urban Terror server
@@ -31,11 +33,10 @@ PIDFILE=$RUNDIR/$NAME.pid
 . /lib/lsb/init-functions
 
 # See if the daemon is present
-if [ -e "$DAEMON" ]
-    then
-        chmod +x "$DAEMON"
-        chown -R "$USER:$GROUP" "$DIR"
-    fi
+if [ -e "$DAEMON" ]; then
+    chmod +x "$DAEMON"
+    chown -R "$USER:$GROUP" "$DIR"
+fi
 
 # Make sure /var/run/pcwbot exists
 test -d "$RUNDIR" || {
@@ -45,8 +46,7 @@ test -d "$RUNDIR" || {
 
 case "$1" in
     start)
-        if [ -e "$PIDFILE" ]
-        then
+        if [ -e "$PIDFILE" ]; then
             echo "$0:"
             echo "  Another instance of \`${DAEMON##*/}' seems to be running."
             echo "  If this is not the case, please remove \"$PIDFILE\"."
@@ -71,14 +71,14 @@ case "$1" in
         fi
         ;;
 
-    restart)
+    restart|force-reload)
         $0 stop
         sleep 3
         $0 start
         ;;
 
     *)
-        echo "Usage: $0 {start|stop|restart}" >&2
+        echo "Usage: $0 {start|stop|restart|force-reload}" >&2
         exit 1
         ;;
 esac
