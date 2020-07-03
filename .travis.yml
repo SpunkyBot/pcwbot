@@ -7,6 +7,6 @@ branches:
 install:
   - pip install flake8
 script:
-  - flake8 --ignore=E501,E265,E266,E402,E722 --max-complexity=25 --max-line-length=120 --statistics --count .
+  - flake8 --ignore=C901,E501,E265,E266,E402,E722 --max-complexity=25 --max-line-length=120 --statistics --count .
 notifications:
   webhooks: https://www.travisbuddy.com/
